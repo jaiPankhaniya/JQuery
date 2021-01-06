@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+    <head><title>Ajax Get & Post Operation</title>
+    <style>
+        .hidden
+        {
+            visibility: hidden;
+        }
+    </style>
+    </head>
+    <body>
+        <script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+        <div style="text-align:center;">
+            
+            <table align='center' id='tbl1' class="list Pagination" border='3'>
+                <thead>
+                <tr>
+                    <th>UserId</th>
+                    <th>ID</th>
+                    <th>title</th>
+                    <th>completed</th>
+                    <th>Edit</th>
+                    <th>Update</th>
+                </tr>
+                <tr>
+                    <th><input type="text" id="userid" placeholder="User Id" title="Enter User Id to filter..."/></th>
+                    <th><input type="text" id="id" placeholder="Id" title="Enter Id to filter..."/></th>
+                    <th><input type="text" id="title" placeholder="Title" title="Enter title to filter..."/></th>
+                    <th><input type="text" id="completed" placeholder="true/false" title="Enter status to filter..."/></th>
+                    <th colspan="2"><button disabled id="dofilter" title="Filter the Data on the given data">Filter</button></th>
+                </tr>
+                </thead>
+                <tbody id='listBody'>
+
+                </tbody>
+            </table>
+            <br/><br/>
+            <select id='dropdown'>
+                <option value='10' selected>10</option>
+                <option value='20'>20</option>
+                <option value="50">50</option>
+            </select>
+            <input type="button" id="first" value="first" />
+            <input type="button" id="previous" value="previous" />
+            <block id='button'></block>
+            <input type="button" id="next" value="next" />
+            <input type="button" id="last" value="last" />
+            <br><br>
+            <table align="center" border="3" class="editdata hidden">
+                <tr>
+                    <th colspan="4">Edit Details</th>
+                </tr>
+                <tr>
+                    <th>UserId</th>
+                    <th>Id</th>
+                    <th>Title</th>
+                    <th>Completed</th>
+                </tr>
+                <tr>
+                    <td><input id="USERID" type="text" value="" placeholder="User Id" title="Enter New User Id."/></td>
+                    <td><input id="UID" disabled type="text" value="" placeholder="Id" title="Sorry Id Cannot be update."/></td>
+                    <td><input id="UTitle" type="text" value="" placeholder="Title" title="Enter New Title."/></td>
+                    <td><input id="UCompleted" type="text" value="" placeholder="Completed" title="Enter Value of Completed."/></td>
+                </tr><tr><td colspan="4"><button id="btn-update">Update</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button id="btn-cancel">Cancel</button></tr>
+            </table>
+            <input type="hidden" value  ="" id="hidd1"/>
+        <script>
+            var list = new Array();
+            var temp=new Array();
+            var pageList = new Array();
+            var currentPage = 1;
+            var numberPerPage = 0;
+            var numberOfPages = 0;
+            var filteredarray=new Array();
+            $(document).ready(
+            function()
+            {
+                getdata();
+                //function to get data from the url...
+                /* AJAX get */
+                /*function getdata()
+                {
+                    $.get("https://jsonplaceholder.typicode.com/todos",function(data)
+                    {
+                        list=data;
+                        temp=data;
+                        makelist();
+                        loadList();
+                    });
+                }*/
+
+                /*Fetch API*/
+                async function getdata()
+                {
+                    let res=await fetch("https://jsonplaceholder.typicode.com/todos");
+                    data=await res.json();
+                    data.forEach(ele => 
+                    {
+                        list.push({"userId":ele.userId,"id":ele.id,"title":ele.title,"completed":ele.completed});
+                    });
+                    makelist();
+                    loadList();
+                }
+
+                //function calls when the value of the userid changes...
+                $('#userid').change(function(){
+                    filterarray($('#userid'),'userId');
+                });
+                $('#id').change(function(){
+                    filterarray($('#id'),'id');
+                });
+                $('#title').change(function(){
+                    filterarray($('#title'),'title');
+                });
+                $('#completed').change(function(){
+                    filterarray($('#completed'),'completed');
+                });
+                //function to filter array
+                function filterarray(name,value)
+                {
+                    switch(value)
+                    {
+                        case 'userId':
+                            filteredarray=list.filter(function(obj)
+                            {
+                                return obj.userId==name.val();
+                            }); 
+                            break;
+                        case 'id':
+                            filteredarray=list.filter(function(obj)
+                            {
+                                return obj.id==name.val();
+                            }); 
+                            break;
+                        case 'title':
+                            filteredarray=list.filter(function(obj)
+                            {
+                                return obj.title==name.val();
+                            });
+                            break;
+                        case 'completed':
+                            filteredarray=list.filter(function(obj)
+                            {
+                                return obj.completed.toString()==name.val();
+                            });
+                            break;
+                    }
+                    if(filteredarray.length!=0)
+                    {
+                        list=filteredarray;
+                        makelist();
+                        loadList();
+                    }
+                    else
+                    {
+                        $(":text").val('');
+                        alert('Sorry,! No data found....');
+                        list=temp;
+                        makelist();
+                        loadList();
+                    }
+                }
+                //function which create the list.....
+                function makelist()
+                {
+                    numberPerPage=parseInt($("#dropdown").val());
+                    numberOfPages = getNumberOfPages();
+                }
+                //function calls when the value of drop down will change....
+                $("#dropdown").change(
+                function()
+                {
+                    makelist();
+                    loadList();
+                });
+                //function to get the number of pages...
+                function getNumberOfPages() 
+                {
+                    return Math.ceil(list.length / numberPerPage);
+                }
+                //function runs when the next button clicks;....
+                $('#next').click(function()
+                {
+                    currentPage += 1;
+                    loadList();
+                });
+                //function runs when the previous button clicks....
+                $("#previous").click(
+                function(){
+                    currentPage -= 1;
+                    loadList();
+                });
+                //functions runs whent he first button clicks.....
+                $("#first").click(function()
+                {
+                    currentPage = 1;
+                    loadList();
+                });
+                //function runs when the last button is clickes.......
+                $("#last").click(
+                function()
+                {
+                    currentPage = numberOfPages;
+                    makelist();
+                    loadList();
+                });
+                //function to cancel the form....
+                $('#btn-cancel').click(function(){
+                    cleardata();
+                    alert("update Canceled !");
+                    $('.editdata').addClass('hidden');
+                });
+                //function to final update...
+                $('#btn-update').click(function(){
+                    var con=confirm("Are you sure you want to update data?");
+                    var ID=$('#hidd1').val();
+                    if(con==true)
+                    {
+                        list[ID].userId=$('#USERID').val();
+                        list[ID].id=$('#UID').val();
+                        list[ID].title=$('#UTitle').val();
+                        list[ID].completed=$('#UCompleted').val();
+                        $('.editdata').addClass('hidden');
+                        makelist();
+                        loadList();
+                    }
+                });
+            });//closing document.ready();
+            //function to clear the form....
+            function cleardata()
+            {
+                $('#USERID').val('');
+                $('#UID').val('');
+                $('#UTitle').val('');
+                $('#UCompleted').val('');
+                $('#hidd1').val('');
+            }
+            //function to edit the data....
+            function EditData(ID)
+            {
+                $('.editdata').removeClass('hidden');
+                $('#USERID').val(list[ID].userId);
+                $('#UID').val(list[ID].id);
+                $('#UTitle').val(list[ID].title);
+                $('#UCompleted').val(list[ID].completed);
+                $('#hidd1').val(ID);
+            }
+            //function to Delete data.....
+            function DeleteData(ID)
+            {
+                var con=confirm(`Are you sure you want to delete Data..?  \n UserId:${list[ID].userId} \n ID:${list[ID].id} \n title:${list[ID].title} \n Completed:${list[ID].completed}.`);
+                if(con==true)
+                {
+                    list.splice(ID,1);
+                    loadList();
+                }
+                else
+                {
+                    alert("Thankyou,.");
+                    loadList();
+                }
+            }
+            //function to draw the data,,,,,,
+            function drawList() 
+            {
+                $(".list tr:gt(1)").remove();
+                for (r = 0; r < pageList.length; r++) 
+                {
+                    $("#listBody").append(`<tr><td>${pageList[r].userId}</td><td>${pageList[r].id}</td><td>${pageList[r].title}</td><td>${pageList[r].completed}</td><td><button onclick=EditData(${((currentPage-1)*10)+r})>Edit</button></td><td><button onclick=DeleteData(${((currentPage-1)*10)+r})>Delete</button</td></tr>`);
+                }
+            }
+            //function to check the button status......
+            function check() 
+            {
+                document.getElementById("next").disabled = currentPage == numberOfPages ? true : false;
+                document.getElementById("previous").disabled = currentPage == 1 ? true : false;
+                document.getElementById("first").disabled = currentPage == 1 ? true : false;
+                document.getElementById("last").disabled = currentPage == numberOfPages ? true : false;
+                //empty button......
+                $('#button').empty();
+                generatebutton();
+            }
+            //function to load the data......
+            function loadList() 
+            {
+                var begin = ((currentPage - 1) * numberPerPage);
+                var end = begin + numberPerPage;
+                pageList = list.slice(begin, end);
+                drawList();
+                check();
+            }
+            function showData(index)
+            {
+                currentPage=index;
+                loadList();
+            }
+            //generate button for the pagination....
+            function generatebutton()
+            {
+                if(numberOfPages<=5 && currentPage<=5)
+                {
+                    for(i=1;i<=numberOfPages;i++)
+                    {
+                        $('#button').append(`<button id='bt${i}' val='${i}' onclick='showData(${i})'>${i}</button>`);
+                    }
+                }
+                else if(currentPage<=3)
+                {
+                    for(i=1;i<=5 && i<=numberOfPages;i++)
+                    {
+                        $('#button').append(`<button id='bt${i}' val='${i}' onclick='showData(${i})'>${i}</button>`);
+                    }
+                }
+                else if(currentPage>3 && currentPage<numberOfPages-2)
+                {
+                    for(i=currentPage-2;i<=(currentPage+2);i++)
+                    {
+                        $('#button').append(`<button id='bt${i}' val='${i}' onclick='showData(${i})'>${i}</button>`);
+                    }
+                }
+                else if(currentPage>=numberOfPages-2)
+                {
+                    for(i=numberOfPages-4;i<=numberOfPages;i++)
+                    {
+                        $('#button').append(`<button id='bt${i}' val='${i}' onclick='showData(${i})'>${i}</button>`);
+                    }
+                }
+            }
+            </script>
+            
+    </body>
+</html>
